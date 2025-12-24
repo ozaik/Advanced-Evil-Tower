@@ -24,8 +24,8 @@ Feature requests are welcome! Please open an issue with:
 
 1. **Fork the repository**
    ```bash
-   git clone https://github.com/yourusername/remote-browser-system.git
-   cd remote-browser-system
+   git clone https://github.com/ozaik/Advanced-remote-browser.git
+   cd Advanced-remote-browser
    ```
 
 2. **Create a feature branch**
@@ -85,8 +85,8 @@ Feature requests are welcome! Please open an issue with:
 
 ```bash
 # Clone the repo
-git clone https://github.com/yourusername/remote-browser-system.git
-cd remote-browser-system
+git clone https://github.com/ozaik/Advanced-remote-browser.git
+cd Advanced-remote-browser
 
 # Start services
 docker-compose up -d

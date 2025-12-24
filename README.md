@@ -1,6 +1,6 @@
 # Remote Browser System
 
-[![Docker Build](https://github.com/yourusername/remote-browser-system/workflows/Docker%20Build/badge.svg)](https://github.com/yourusername/remote-browser-system/actions)
+[![Docker Build](https://github.com/ozaik/Advanced-remote-browser/workflows/Docker%20Build/badge.svg)](https://github.com/ozaik/Advanced-remote-browser/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Docker](https://img.shields.io/badge/Docker-Required-blue.svg)](https://www.docker.com/)
 
@@ -69,8 +69,8 @@ A containerized remote browser solution that provides isolated, stealth-configur
 
 1. **Clone the repository**
 ```bash
-git clone https://github.com/yourusername/remote-browser-system.git
-cd remote-browser-system
+git clone https://github.com/ozaik/Advanced-remote-browser.git
+cd Advanced-remote-browser
 ```
 
 2. **Configure environment (optional)**
