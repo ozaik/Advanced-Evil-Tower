@@ -4,6 +4,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Docker](https://img.shields.io/badge/Docker-Required-blue.svg)](https://www.docker.com/)
 
+> ⚠️ **EDUCATIONAL PURPOSE ONLY**: This project is designed for educational and research purposes. Administrator access to user browser sessions could be misused for malicious purposes such as credential theft or data interception. Users must be informed that their browser activity may be monitored. Only deploy this in controlled environments where users provide explicit consent. Unauthorized interception of user sessions may violate privacy laws.
+
 A containerized remote browser solution that provides isolated, stealth-configured browser sessions accessible via noVNC. Each user gets their own Chromium instance running in Docker, accessible through a web interface.
 
 ## ✨ Key Features
@@ -14,6 +16,7 @@ A containerized remote browser solution that provides isolated, stealth-configur
 - **📱 WiFi Captive Portal** - Can be deployed as a WiFi hotspot login portal
 - **🔐 OAuth Integration** - Pre-configured for Google, Microsoft, and Facebook authentication
 - **📊 Admin Dashboard** - Monitor and manage all active sessions
+- **👁️ Session Monitoring** - Administrators can view and interact with any active browser session
 - **🎯 Domain Allowlist** - Restrict browsing to specific domains per session
 - **🐳 Docker-Based** - Easy deployment and scaling
 
@@ -26,6 +29,7 @@ Deploy as a WiFi hotspot authentication system:
 - Authenticate via Google/Microsoft/Facebook in isolated browser
 - Grant internet access upon successful authentication
 - Monitor authenticated users via admin dashboard
+- **⚠️ Admin can access user sessions**: Administrators can view any active browser session through the admin panel, including after authentication. This allows monitoring of user activity but raises significant privacy concerns.
 
 ### 2. Remote Browser Access
 Provide controlled browser access:
@@ -33,6 +37,37 @@ Provide controlled browser access:
 - Shared devices in libraries or kiosks
 - Development/testing environments
 - Bot detection testing and research
+
+### ⚠️ Security & Privacy Warnings
+
+**Administrator Access to User Sessions:**
+- Admins can click "Open Session" in the dashboard to view any user's browser in real-time
+- This includes viewing authenticated sessions (Google, Facebook, Microsoft accounts)
+- Browser activity, credentials, and personal data are potentially visible to administrators
+- Cookies and session tokens can be intercepted
+
+**Potential Misuse:**
+- Session hijacking and credential theft
+- Privacy violation and unauthorized surveillance
+- Man-in-the-middle attacks on user authentication
+- Interception of sensitive personal information
+
+**Legal Considerations:**
+- Users MUST be informed that their sessions may be monitored
+- Explicit consent is required in most jurisdictions
+- May violate GDPR, CCPA, and other privacy regulations if misused
+- Unauthorized access to user sessions may constitute a criminal offense
+
+**Recommended Use:**
+- Educational environments with explicit consent
+- Security research and penetration testing (authorized only)
+- Controlled testing environments
+- Development and debugging purposes
+
+**NOT recommended for:**
+- Public WiFi without clear privacy warnings
+- Production environments handling real user data
+- Any scenario without explicit user consent
 
 ## 🏗️ Architecture
 
@@ -154,10 +189,12 @@ Access the admin panel at `http://localhost:8080/admin` to:
 - **View all active sessions** - See real-time list of running browser containers with auto-refresh every 5 seconds
 - **Monitor session details** - Container name, session ID, allowlist hosts, start URL, creation time
 - **Authentication status** - Track Google, Microsoft, and Facebook login status for each session
-- **Open sessions** - Click "Open Session" to view any active browser in a new tab
+- **⚠️ Open sessions** - Click "Open Session" to view any active browser in a new tab, including authenticated sessions
 - **Manage sessions** - Delete individual sessions or bulk delete all sessions
 - **Custom settings** - Configure default start URL and allowlist hosts for new sessions
 - **Session analytics** - View session duration and last accessed time
+
+> **Privacy Warning**: The "Open Session" feature allows administrators to access users' authenticated browser sessions in real-time. This provides complete visibility into user activity, including logged-in accounts and personal data. This feature is intended for educational purposes and security research only.
 
 ## 📡 API Reference
 
