@@ -6,6 +6,34 @@
 
 A containerized remote browser solution that provides isolated, stealth-configured browser sessions accessible via noVNC. Each user gets their own Chromium instance running in Docker, accessible through a web interface.
 
+## ✨ Key Features
+
+- **🖥️ Isolated Browser Sessions** - Each user gets a dedicated Chromium instance in Docker
+- **🔒 Stealth Configuration** - Bypass bot detection with custom user-agent and automation flags
+- **🌐 noVNC Access** - Remote desktop access to browser without plugins
+- **📱 WiFi Captive Portal** - Can be deployed as a WiFi hotspot login portal
+- **🔐 OAuth Integration** - Pre-configured for Google, Microsoft, and Facebook authentication
+- **📊 Admin Dashboard** - Monitor and manage all active sessions
+- **🎯 Domain Allowlist** - Restrict browsing to specific domains per session
+- **🐳 Docker-Based** - Easy deployment and scaling
+
+## 🎯 Use Cases
+
+### 1. WiFi Captive Portal
+Deploy as a WiFi hotspot authentication system:
+- Users connect to open WiFi network
+- Automatic redirect to login page
+- Authenticate via Google/Microsoft/Facebook in isolated browser
+- Grant internet access upon successful authentication
+- Monitor authenticated users via admin dashboard
+
+### 2. Remote Browser Access
+Provide controlled browser access:
+- Corporate environments with restricted browsing
+- Shared devices in libraries or kiosks
+- Development/testing environments
+- Bot detection testing and research
+
 ## 🏗️ Architecture
 
 ```
@@ -342,6 +370,63 @@ docker exec -it browser-{sid} bash
 - **Network**: Browser containers on isolated Docker network
 - **Cleanup**: Implement session timeout and cleanup policies
 - **Authentication**: Add user authentication before production use
+- **WiFi Portal**: When used as captive portal, ensure proper firewall rules and network isolation
+
+## 🌐 WiFi Captive Portal Setup
+
+To deploy as a WiFi hotspot authentication system:
+
+### Prerequisites
+- Raspberry Pi or Linux server with WiFi capability
+- `hostapd` for access point
+- `dnsmasq` for DNS/DHCP
+- `iptables` for network routing
+
+### Quick Setup (Linux)
+```bash
+# 1. Configure WiFi access point (hostapd)
+sudo nano /etc/hostapd/hostapd.conf
+# Set: interface=wlan0, ssid=YourWiFi, wpa=0 (open network)
+
+# 2. Configure DNS/DHCP (dnsmasq)
+sudo nano /etc/dnsmasq.conf
+# Add: address=/#/192.168.4.1 (redirect all DNS to gateway)
+
+# 3. Configure network interface
+sudo ip addr add 192.168.4.1/24 dev wlan0
+
+# 4. Enable IP forwarding and NAT
+sudo sysctl -w net.ipv4.ip_forward=1
+sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+sudo iptables -t nat -A PREROUTING -i wlan0 -p tcp --dport 80 -j REDIRECT --to-port 8080
+sudo iptables -t nat -A PREROUTING -i wlan0 -p tcp --dport 443 -j REDIRECT --to-port 8080
+
+# 5. Start services
+sudo systemctl start hostapd dnsmasq
+docker-compose up -d
+```
+
+### Captive Portal Flow
+1. User connects to open WiFi network
+2. Device attempts to access internet
+3. DNS redirects all requests to portal (192.168.4.1:8080)
+4. User sees `/wifi-login` page
+5. User authenticates via Google/Microsoft/Facebook in isolated browser
+6. System detects successful authentication via `/api/remote-browser/session/{sid}/auth-status`
+7. User's MAC address added to authenticated list
+8. User granted internet access through NAT
+
+### Nginx Configuration for Portal Detection
+Add to `nginx/default.conf`:
+```nginx
+# Captive portal detection endpoints
+location /generate_204 { return 302 http://192.168.4.1:8080/wifi-login; }
+location /hotspot-detect.html { return 302 http://192.168.4.1:8080/wifi-login; }
+location /ncsi.txt { return 302 http://192.168.4.1:8080/wifi-login; }
+location /connecttest.txt { return 302 http://192.168.4.1:8080/wifi-login; }
+```
+
+This triggers the automatic "Sign in to network" pop-up on phones and laptops.
 
 ## 📊 Monitoring
 
