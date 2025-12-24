@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 
 interface Session {
   sid: string;
@@ -30,12 +30,152 @@ interface Session {
 }
 
 export default function AdminPage() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [password, setPassword] = useState("");
+  const [authError, setAuthError] = useState("");
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [customStartUrl, setCustomStartUrl] = useState("");
   const [customAllowlistHosts, setCustomAllowlistHosts] = useState("");
   const [settingsSaved, setSettingsSaved] = useState(false);
+
+  // Check if already authenticated
+  useEffect(() => {
+    const token = localStorage.getItem("adminToken");
+    if (token) {
+      setIsAuthenticated(true);
+    } else {
+      setLoading(false);
+    }
+  }, []);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError("");
+
+    try {
+      const res = await fetch("/api/admin/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        localStorage.setItem("adminToken", data.token);
+        setIsAuthenticated(true);
+        setPassword("");
+      } else {
+        setAuthError("Invalid password");
+      }
+    } catch (err) {
+      setAuthError("Authentication failed");
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("adminToken");
+    setIsAuthenticated(false);
+  };
+
+  // Show login form if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <div style={{ 
+        display: "flex", 
+        justifyContent: "center", 
+        alignItems: "center", 
+        minHeight: "100vh",
+        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+      }}>
+        <div style={{
+          background: "white",
+          padding: "40px",
+          borderRadius: "10px",
+          boxShadow: "0 10px 25px rgba(0,0,0,0.2)",
+          width: "100%",
+          maxWidth: "400px"
+        }}>
+          <h1 style={{ 
+            marginBottom: "30px", 
+            textAlign: "center",
+            color: "#333"
+          }}>
+            🔒 Admin Login
+          </h1>
+          <form onSubmit={handleLogin}>
+            <div style={{ marginBottom: "20px" }}>
+              <label style={{ 
+                display: "block", 
+                marginBottom: "8px",
+                color: "#555",
+                fontWeight: "500"
+              }}>
+                Password
+              </label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter admin password"
+                style={{
+                  width: "100%",
+                  padding: "12px",
+                  border: "2px solid #ddd",
+                  borderRadius: "5px",
+                  fontSize: "16px",
+                  boxSizing: "border-box"
+                }}
+                autoFocus
+              />
+            </div>
+            {authError && (
+              <div style={{ 
+                color: "#e74c3c", 
+                marginBottom: "15px",
+                textAlign: "center",
+                fontWeight: "500"
+              }}>
+                {authError}
+              </div>
+            )}
+            <button
+              type="submit"
+              style={{
+                width: "100%",
+                padding: "12px",
+                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                color: "white",
+                border: "none",
+                borderRadius: "5px",
+                fontSize: "16px",
+                fontWeight: "600",
+                cursor: "pointer",
+                transition: "transform 0.2s"
+              }}
+              onMouseOver={(e) => e.currentTarget.style.transform = "translateY(-2px)"}
+              onMouseOut={(e) => e.currentTarget.style.transform = "translateY(0)"}
+            >
+              Login
+            </button>
+          </form>
+          <p style={{ 
+            marginTop: "20px", 
+            textAlign: "center",
+            color: "#777",
+            fontSize: "14px"
+          }}>
+            Default password: <code style={{ 
+              background: "#f0f0f0", 
+              padding: "2px 6px",
+              borderRadius: "3px"
+            }}>admin123</code>
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const fetchSessions = async () => {
     try {
@@ -186,7 +326,29 @@ export default function AdminPage() {
       margin: "0 auto",
       fontFamily: "system-ui, -apple-system, sans-serif"
     }}>
-      <h1 style={{ marginBottom: 30 }}>Browser Sessions Admin</h1>
+      <div style={{ 
+        display: "flex", 
+        justifyContent: "space-between", 
+        alignItems: "center",
+        marginBottom: 30 
+      }}>
+        <h1 style={{ margin: 0 }}>Browser Sessions Admin</h1>
+        <button
+          onClick={handleLogout}
+          style={{
+            padding: "10px 20px",
+            background: "#dc3545",
+            color: "white",
+            border: "none",
+            borderRadius: "5px",
+            cursor: "pointer",
+            fontWeight: "500",
+            fontSize: "14px"
+          }}
+        >
+          🔓 Logout
+        </button>
+      </div>
       
       {/* Custom Session Settings */}
       <div style={{

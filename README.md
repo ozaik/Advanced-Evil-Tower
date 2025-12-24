@@ -185,7 +185,14 @@ curl -X POST http://localhost:8080/api/remote-browser/session \
 
 ### Admin Dashboard
 
-Access the admin panel at `http://localhost:8080/admin` to:
+Access the admin panel at `http://localhost:8080/admin`:
+
+**🔒 Login Required:**
+- Default password: `admin123`
+- Change via environment variable: `ADMIN_PASSWORD=your_secure_password`
+- Sessions persist for 24 hours
+
+**Features:**
 - **View all active sessions** - See real-time list of running browser containers with auto-refresh every 5 seconds
 - **Monitor session details** - Container name, session ID, allowlist hosts, start URL, creation time
 - **Authentication status** - Track Google, Microsoft, and Facebook login status for each session
