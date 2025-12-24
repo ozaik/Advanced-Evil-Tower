@@ -1,0 +1,51 @@
+name: Docker Build
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      
+    - name: Build BrowserBox
+      run: docker-compose build browserbox
+      
+    - name: Build Gateway
+      run: docker-compose build gateway
+      
+    - name: Build Web
+      run: docker-compose build web
+      
+    - name: Build Nginx
+      run: docker-compose build nginx
+      
+    - name: Start services
+      run: docker-compose up -d
+      
+    - name: Wait for services
+      run: sleep 10
+      
+    - name: Check services are running
+      run: docker-compose ps
+      
+    - name: Test API health
+      run: |
+        curl -f http://localhost:8080/api/remote-browser/sessions || exit 1
+        
+    - name: View logs on failure
+      if: failure()
+      run: docker-compose logs
+      
+    - name: Cleanup
+      if: always()
+      run: docker-compose down -v

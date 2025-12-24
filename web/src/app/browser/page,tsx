@@ -1,0 +1,22 @@
+"use client";
+import { useEffect, useState } from "react";
+
+export default function BrowserPage() {
+  const [iframeUrl, setIframeUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/remote-browser/session")
+      .then(r => r.json())
+      .then(d => setIframeUrl(d.iframeUrl));
+  }, []);
+
+  if (!iframeUrl) return <div>Starting browser…</div>;
+
+  return (
+    <iframe
+      src={iframeUrl}
+      style={{ width: "100vw", height: "100vh", border: 0 }}
+      allow="clipboard-read; clipboard-write"
+    />
+  );
+}

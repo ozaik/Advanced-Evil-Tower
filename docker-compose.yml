@@ -1,0 +1,64 @@
+services:
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - gateway
+      - web
+    networks: [appnet]
+
+  gateway:
+    build: ./gateway
+    environment:
+      - DOCKER_NETWORK=appnet
+      - CONTAINER_PREFIX=browser-
+      - BROWSER_IMAGE=remote-browser-browserbox:latest
+      - SESSION_DB_PATH=/data/sessions.sqlite
+
+      - BASE_URL=${BASE_URL}
+      - COOKIE_SECRET=${COOKIE_SECRET}
+      - JWT_SECRET=${JWT_SECRET}
+      - ACCESS_MODE=${ACCESS_MODE}
+      - FRAME_ANCESTORS=${FRAME_ANCESTORS}
+
+      - DEFAULT_ALLOWLIST_HOSTS=${DEFAULT_ALLOWLIST_HOSTS}
+      - DEFAULT_START_URL=${DEFAULT_START_URL}
+
+      - SESSION_IDLE_TTL_SECONDS=${SESSION_IDLE_TTL_SECONDS}
+      - SESSION_HARD_TTL_SECONDS=${SESSION_HARD_TTL_SECONDS}
+      - CLEANUP_INTERVAL_SECONDS=${CLEANUP_INTERVAL_SECONDS}
+
+      - EXCHANGE_SHARED_SECRET=${EXCHANGE_SHARED_SECRET}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - gateway_data:/data
+    networks: [appnet]
+
+  web:
+    build: ./web
+    environment:
+      - NODE_ENV=production
+      - BASE_URL=${BASE_URL}
+      - GATEWAY_INTERNAL_URL=${GATEWAY_INTERNAL_URL}
+      - EXCHANGE_SHARED_SECRET=${EXCHANGE_SHARED_SECRET}
+      - DEFAULT_ALLOWLIST_HOSTS=${DEFAULT_ALLOWLIST_HOSTS}
+      - DEFAULT_START_URL=${DEFAULT_START_URL}
+    depends_on:
+      - gateway
+    networks: [appnet]
+
+  browserbox:
+    build: ./browserbox
+    image: remote-browser-browserbox:latest
+    networks: [appnet]
+    # Not run directly; spawned per-session by gateway
+
+networks:
+  appnet:
+    name: appnet
+
+volumes:
+  gateway_data:
