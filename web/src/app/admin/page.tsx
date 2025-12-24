@@ -50,6 +50,152 @@ export default function AdminPage() {
     }
   }, []);
 
+  // Initial load effect
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    
+    const loadInitialSessions = async () => {
+      try {
+        const res = await fetch("/api/remote-browser/sessions", {
+          credentials: "include",
+        });
+        
+        if (!res.ok) {
+          throw new Error(await res.text());
+        }
+        
+        const data = await res.json();
+        const sessionsData = data.sessions || [];
+        
+        // Fetch auth status for each session
+        const sessionsWithAuth = await Promise.all(
+          sessionsData.map(async (session: Session) => {
+            try {
+              const authRes = await fetch(`/api/remote-browser/session/${session.sid}/auth-status`, {
+                credentials: "include",
+              });
+              
+              if (authRes.ok) {
+                const authData = await authRes.json();
+                console.log(`Auth status for ${session.sid}:`, authData);
+                return {
+                  ...session,
+                  authStatus: {
+                    google: {
+                      isAuthenticated: authData.google?.isAuthenticated || false,
+                      userEmail: authData.google?.userEmail || null,
+                      lastChecked: Date.now()
+                    },
+                    microsoft: {
+                      isAuthenticated: authData.microsoft?.isAuthenticated || false,
+                      userEmail: authData.microsoft?.userEmail || null,
+                      lastChecked: Date.now()
+                    },
+                    facebook: {
+                      isAuthenticated: authData.facebook?.isAuthenticated || false,
+                      userName: authData.facebook?.userName || null,
+                      lastChecked: Date.now()
+                    }
+                  }
+                };
+              } else {
+                console.error(`Auth status fetch failed for ${session.sid}: ${authRes.status}`);
+              }
+            } catch (err) {
+              console.error(`Failed to fetch auth status for ${session.sid}:`, err);
+            }
+            return session;
+          })
+        );
+        
+        console.log('Sessions with auth:', sessionsWithAuth);
+        setSessions(sessionsWithAuth);
+        setLoading(false);
+      } catch (err) {
+        console.error(err);
+        setError("Failed to load sessions");
+        setLoading(false);
+      }
+    };
+
+    loadInitialSessions();
+  }, [isAuthenticated]);
+
+  // Polling effect
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const pollSessions = async () => {
+      try {
+        const res = await fetch("/api/remote-browser/sessions", {
+          credentials: "include",
+        });
+        
+        if (!res.ok) return;
+        
+        const data = await res.json();
+        const sessionsData = data.sessions || [];
+        
+        const sessionsWithAuth = await Promise.all(
+          sessionsData.map(async (session: Session) => {
+            try {
+              const authRes = await fetch(`/api/remote-browser/session/${session.sid}/auth-status`, {
+                credentials: "include",
+              });
+              
+              if (authRes.ok) {
+                const authData = await authRes.json();
+                return {
+                  ...session,
+                  authStatus: {
+                    google: {
+                      isAuthenticated: authData.google?.isAuthenticated || false,
+                      userEmail: authData.google?.userEmail || null,
+                      lastChecked: Date.now()
+                    },
+                    microsoft: {
+                      isAuthenticated: authData.microsoft?.isAuthenticated || false,
+                      userEmail: authData.microsoft?.userEmail || null,
+                      lastChecked: Date.now()
+                    },
+                    facebook: {
+                      isAuthenticated: authData.facebook?.isAuthenticated || false,
+                      userName: authData.facebook?.userName || null,
+                      lastChecked: Date.now()
+                    }
+                  }
+                };
+              }
+            } catch (err) {
+              console.error(`Failed to fetch auth status for ${session.sid}:`, err);
+            }
+            return session;
+          })
+        );
+        
+        setSessions(sessionsWithAuth);
+      } catch (err) {
+        console.error('Polling error:', err);
+      }
+    };
+
+    const interval = setInterval(pollSessions, 5000);
+    return () => clearInterval(interval);
+  }, [isAuthenticated]);
+
+  // Load settings effect
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    
+    fetch("/api/remote-browser/settings", { credentials: "include" })
+      .then(res => res.json())
+      .then(data => {
+        setCustomStartUrl(data.start_url || "");
+        setCustomAllowlistHosts(data.allowlist_hosts || "");
+      })
+      .catch(err => console.error("Failed to load settings:", err));
+  }, [isAuthenticated]);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError("");
@@ -177,88 +323,6 @@ export default function AdminPage() {
     );
   }
 
-  const fetchSessions = async () => {
-    try {
-      const res = await fetch("/api/remote-browser/sessions", {
-        credentials: "include",
-      });
-      
-      if (!res.ok) {
-        throw new Error(await res.text());
-      }
-      
-      const data = await res.json();
-      const sessionsData = data.sessions || [];
-      
-      // Fetch auth status for each session
-      const sessionsWithAuth = await Promise.all(
-        sessionsData.map(async (session: Session) => {
-          try {
-            const authRes = await fetch(`/api/remote-browser/session/${session.sid}/auth-status`, {
-              credentials: "include",
-            });
-            
-            if (authRes.ok) {
-              const authData = await authRes.json();
-              console.log(`Auth status for ${session.sid}:`, authData);
-              return {
-                ...session,
-                authStatus: {
-                  google: {
-                    isAuthenticated: authData.google?.isAuthenticated || false,
-                    userEmail: authData.google?.userEmail || null,
-                    lastChecked: Date.now()
-                  },
-                  microsoft: {
-                    isAuthenticated: authData.microsoft?.isAuthenticated || false,
-                    userEmail: authData.microsoft?.userEmail || null,
-                    lastChecked: Date.now()
-                  },
-                  facebook: {
-                    isAuthenticated: authData.facebook?.isAuthenticated || false,
-                    userName: authData.facebook?.userName || null,
-                    lastChecked: Date.now()
-                  }
-                }
-              };
-            } else {
-              console.error(`Auth status fetch failed for ${session.sid}: ${authRes.status}`);
-            }
-          } catch (err) {
-            console.error(`Failed to fetch auth status for ${session.sid}:`, err);
-          }
-          return session;
-        })
-      );
-      
-      console.log('Sessions with auth:', sessionsWithAuth);
-      setSessions(sessionsWithAuth);
-      setLoading(false);
-    } catch (err) {
-      console.error(err);
-      setError("Failed to load sessions");
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchSessions();
-    // Refresh every 5 seconds
-    const interval = setInterval(fetchSessions, 5000);
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    // Load user settings
-    fetch("/api/remote-browser/settings", { credentials: "include" })
-      .then(res => res.json())
-      .then(data => {
-        setCustomStartUrl(data.start_url || "");
-        setCustomAllowlistHosts(data.allowlist_hosts || "");
-      })
-      .catch(err => console.error("Failed to load settings:", err));
-  }, []);
-
   const openSession = (session: Session) => {
     // Use the iframeUrl from the session which includes the auth token
     window.open(session.iframeUrl, "_blank");
@@ -277,7 +341,8 @@ export default function AdminPage() {
         throw new Error(await res.text());
       }
       
-      fetchSessions();
+      // Refresh sessions list
+      window.location.reload();
     } catch (err) {
       console.error(err);
       alert("Failed to delete session");
@@ -296,7 +361,8 @@ export default function AdminPage() {
       );
       
       await Promise.all(promises);
-      fetchSessions();
+      // Refresh sessions list
+      window.location.reload();
     } catch (err) {
       console.error(err);
       alert("Failed to delete some sessions");
